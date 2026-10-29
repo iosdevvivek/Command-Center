@@ -1,0 +1,276 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Vivek's Personal Command Center</title>
+<style>
+:root {
+  --bg:#f4f7fb; --surface:#fff; --card:#f1f6ff; --surface2:#f8fafc; --text:#172033;
+  --muted:#6b778c; --line:#e4e9f1; --accent:#2457d6; --accent2:#eef3ff;
+  --danger:#c93636; --shadow:0 8px 28px rgba(23,32,51,.08);
+}
+*{box-sizing:border-box}
+body{margin:0;font-family:Inter,Segoe UI,Arial,sans-serif;background:var(--bg);color:var(--text)}
+button,input,select{font:inherit}
+button{cursor:pointer}
+.wrap{max-width:1450px;margin:auto;padding:24px}
+.hero{background:linear-gradient(135deg,#172033,#263a63);color:#fff;border-radius:22px;padding:28px;margin-bottom:18px;box-shadow:var(--shadow)}
+.hero h1{margin:0 0 7px;font-size:30px}
+.hero p{margin:0;color:#d9e2f4}
+.topbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:22px}
+.search{flex:1;min-width:260px;padding:13px 15px;border:2px solid rgba(255,255,255,.45);border-radius:12px;outline:none;background:#fff;color:#172033;box-shadow:0 2px 8px rgba(0,0,0,.12)}
+.btn{border:1px solid var(--line);background:#fff;color:var(--text);padding:10px 14px;border-radius:10px;font-weight:600}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+.btn.ghost{background:#fff;border-color:#fff;color:#172033;box-shadow:0 2px 8px rgba(0,0,0,.12)}
+.btn.ghost:hover{background:#eef3ff;color:#172033}
+
+
+
+
+.filters{display:flex;gap:8px;overflow:auto;padding:2px 0 14px}
+.filter{white-space:nowrap;border:1px solid #b9d0f5;background:#e8f1ff;padding:8px 13px;border-radius:999px;color:#174ea6;font-weight:600;cursor:pointer;transition:.15s}
+.filter:hover{background:#d8e8ff}.filter.active{background:#2457d6;color:#fff;border-color:#2457d6}
+.filter:hover{background:#e8f1ff;color:var(--accent);border-color:#9dbbe8}
+.section{margin:18px 0 28px}
+.section-head{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:12px}
+.section h2{margin:0;font-size:19px}
+.count{color:var(--muted);font-size:12px}
+.grid{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:8px}
+.bookmark{position:relative;background:#e8f1ff;border:1px solid #b9d0f5;border-radius:9px;padding:8px 10px;min-height:38px;box-shadow:0 2px 7px rgba(36,87,214,.08);transition:.15s;display:flex;align-items:center}
+.bookmark:hover{transform:translateY(-1px);background:#dceaff;border-color:#8fb3ec;box-shadow:0 4px 12px rgba(36,87,214,.14)}
+.bookmark.dragging{opacity:.45}
+.bookmark h3{margin:0 55px 0 0;font-size:12px;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.bookmark h3 a{color:#174ea6;text-decoration:none}.bookmark h3 a:hover{color:#0b3b85;text-decoration:underline}
+
+.meta{display:none}
+.tag{font-size:11px;background:var(--accent2);color:var(--accent);padding:4px 7px;border-radius:999px}
+.actions{position:absolute;right:5px;top:5px;display:flex;gap:1px;background:#e8f1ff}
+.icon{border:0;background:transparent;padding:2px 3px;border-radius:5px;color:#4b6790;font-size:11px;line-height:1}
+.icon:hover{background:var(--surface2);color:var(--text)}
+.open{display:none}
+.disabled{opacity:.62}
+.empty{padding:30px;text-align:center;color:var(--muted);background:#fff;border:1px dashed var(--line);border-radius:14px}
+.modal{position:fixed;inset:0;background:rgba(8,14,28,.5);display:none;align-items:center;justify-content:center;padding:20px;z-index:10}
+.modal.show{display:flex}
+.dialog{background:#fff;border-radius:18px;width:min(560px,100%);padding:22px;box-shadow:0 20px 60px rgba(0,0,0,.2)}
+.dialog h2{margin-top:0}
+.form{display:grid;gap:12px}
+.form label{font-size:12px;font-weight:700;color:var(--muted)}
+.form input,.form select{width:100%;padding:11px;border:1px solid var(--line);border-radius:10px}
+.form-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:5px}
+.note{font-size:12px;color:var(--muted);margin-top:16px}
+@media(max-width:1200px){.grid{grid-template-columns:repeat(5,1fr)}}
+@media(max-width:1050px){.grid{grid-template-columns:repeat(4,1fr)}}
+@media(max-width:800px){.grid{grid-template-columns:repeat(3,1fr)}}
+@media(max-width:500px){.wrap{padding:14px}.hero{padding:20px}.grid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="hero">
+    <h1>Vivek's Personal Command Center</h1>
+    <p>AI • Work • Learning • Business • News • Productivity</p>
+    <div class="topbar">
+      <input id="search" class="search" placeholder="🔎 Search bookmarks, categories or URLs..." autocomplete="off">
+      <button type="button" id="addBtn" class="btn ghost">＋ Add Bookmark</button>
+      <button type="button" id="exportBtn" class="btn ghost">Export</button>
+      <button type="button" id="resetBtn" class="btn ghost">Reset</button>
+    </div>
+  </header>
+  <div id="filters" class="filters"></div>
+  <main id="content"></main>
+  <div class="note">Tip: drag cards to reorder them. Changes are saved automatically in this browser.</div>
+</div>
+
+<div id="modal" class="modal" onclick="if(event.target===this)closeModal()">
+  <div class="dialog">
+    <h2 id="modalTitle">Add Bookmark</h2>
+    <form id="bookmarkForm" class="form">
+      <input type="hidden" id="editId">
+      <div><label>Name</label><input id="name" required></div>
+      <div><label>URL</label><input id="url" placeholder="https://..." required></div>
+      <div><label>Category</label><input id="category" list="categoryList" required></div>
+      <datalist id="categoryList"></datalist>
+      <div><label>Description</label><input id="description" placeholder="Short description"></div>
+      <div class="form-actions">
+        <button type="button" class="btn" id="cancelBtn">Cancel</button>
+        <button class="btn primary" type="submit">Save Bookmark</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+const INITIAL = [{"name": "Open AI Knowledge Hub →", "url": "ai_genai_product_leadership_knowledge_hub (1).html", "category": "Work & Hubs"}, {"name": "Mba frameworks →", "url": "file:///C:/Users/vpaliw01/Downloads/MBA_Framework_Hub_Table_View/index.html", "category": "Bookmarks"}, {"name": "School Of AI →", "url": "file:///C:/Users/vpaliw01/Downloads/school_of_applied_ai.html", "category": "Bookmarks"}, {"name": "Blogs →", "url": "file:///C:/Users/vpaliw01/OneDrive%20-%20dentsu/Documents/First%20web/Blogs.html", "category": "Bookmarks"}, {"name": "Product →", "url": "preview (7).html", "category": "Work & Hubs"}, {"name": "JB →", "url": "project_manager_job.html", "category": "Work & Hubs"}, {"name": "Mobile →", "url": "preview (8).html", "category": "Work & Hubs"}, {"name": "Travel →", "url": "file:///C:/Users/vpaliw01/Downloads/weekend_travel_planner%20(3).html", "category": "Bookmarks"}, {"name": "Leaves →", "url": "Leaves.html", "category": "Work & Hubs"}, {"name": "SAP →", "url": "sap_executive_learning_hub_detailed.html", "category": "Work & Hubs"}, {"name": "AI →", "url": "file:///C:/Users/vpaliw01/Downloads/ai_executive_learning_hub%20(1).html#", "category": "Bookmarks"}, {"name": "Term 5 →", "url": "https://docs.google.com/spreadsheets/d/1c0gCi2Hn7Lp420BmOl5v44EpZk2WSqQidhLQHVP1LtQ/edit?gid=2029137362#gid=2029137362", "category": "Work & Hubs"}, {"name": "ai_first_career →", "url": "file:///C:/Users/vpaliw01/Downloads/ai_first_career_transformation.html", "category": "Bookmarks"}, {"name": "My Task →", "url": "file:///C:/Users/vpaliw01/Downloads/todays_delivery_task_board_drag_drop.html", "category": "Bookmarks"}, {"name": "My Prompt →", "url": "file:///C:/Users/vpaliw01/Downloads/Vivek_Prompt_Command_Center%20(2).html", "category": "Bookmarks"}, {"name": "phrases →", "url": "file:///C:/Users/vpaliw01/Downloads/Vivek_Prompt_Command_Center%20(2).html", "category": "Bookmarks"}, {"name": "AI Brief →", "url": "https://chatgpt.com/c/6ab2bc46-75f8-83e8-8126-ef28776b2b86", "category": "Work & Hubs"}, {"name": "Bills →", "url": "file:///C:/Users/vpaliw01/Downloads/Biils.html", "category": "Bookmarks"}, {"name": "Dish →", "url": "file:///C:/Users/vpaliw01/Downloads/Dishes.html", "category": "Bookmarks"}, {"name": "Code →", "url": "file:///C:/Users/vpaliw01/Downloads/Code.html", "category": "Bookmarks"}, {"name": "Design →", "url": "https://www.figma.com/design/SCOnMXkpDC4ciai0KHEMpd/Kunal--HMCL?node-id=190-10572&p=f", "category": "Work & Hubs"}, {"name": "Blogs →", "url": "file:///C:/Users/vpaliw01/Downloads/weekly_blog_studio%20(2).html", "category": "Bookmarks"}, {"name": "Aar Paar", "url": "https://www.youtube.com/playlist?list=PLBL6Jf-M-J0tkbaSb0Z-xEgm8F5LouaAu", "category": "Media & Learning"}, {"name": "FF Explains", "url": "https://www.youtube.com/playlist?list=PLEVkQGIATCXKaXxVQuQSFzJ_QLD5DkAnm", "category": "Media & Learning"}, {"name": "First Post america", "url": "https://www.youtube.com/playlist?list=PLEVkQGIATCXLnm1PUPAyFL7qJ3n21ar4f", "category": "Media & Learning"}, {"name": "World News ANI", "url": "https://www.youtube.com/playlist?list=PLgeZhmWMhjb9gObDI-BKYIBetS-U5pD1X", "category": "Media & Learning"}, {"name": "Forbes", "url": "https://www.youtube.com/@rajshamani/videos", "category": "Media & Learning"}, {"name": "JimmyKimmelLive", "url": "https://www.youtube.com/@JimmyKimmelLive/videos", "category": "Media & Learning"}, {"name": "stanfordonline", "url": "https://www.youtube.com/@stanfordonline/videos", "category": "Media & Learning"}, {"name": "SAP", "url": "https://www.youtube.com/@SAP/videos", "category": "My Hubs"}, {"name": "SiliconValleyGirl", "url": "https://www.youtube.com/@SiliconValleyGirl/videos", "category": "Media & Learning"}, {"name": "lexfridman", "url": "https://www.youtube.com/@lexfridman/videos", "category": "Media & Learning"}, {"name": "Raj Shamami", "url": "https://www.youtube.com/@rajshamani/videos", "category": "Media & Learning"}, {"name": "VP Travel", "url": "https://www.youtube.com/@VP-travels", "category": "Media & Learning"}, {"name": "Music", "url": "https://www.youtube.com/channel/UC-9-kyTW8ZkZNDHQJ6FgpwQ", "category": "Media & Learning"}, {"name": "Ankit inspire", "url": "https://www.youtube.com/@Apni.Pathshala/videos", "category": "Media & Learning"}, {"name": "TheDiaryOfACEO", "url": "https://www.youtube.com/@TheDiaryOfACEO/videos", "category": "Tech & Learning"}, {"name": "Khabargaon", "url": "https://www.youtube.com/@Khabargaon/videos", "category": "Tech & Learning"}, {"name": "Autocar", "url": "https://www.youtube.com/@autocarindia1/videos", "category": "Tech & Learning"}, {"name": "BloomBerg", "url": "https://www.youtube.com/@markets/videos", "category": "Tech & Learning"}, {"name": "DWDocumentary", "url": "https://www.youtube.com/@DWDocumentary/videos", "category": "Tech & Learning"}, {"name": "Duniyadari", "url": "https://www.youtube.com/playlist?list=PL1BQkm1ZUCaVgxtjRtxAxg6xf9TmSuadv", "category": "Tech & Learning"}, {"name": "Artham", "url": "https://www.youtube.com/playlist?list=PLBL6Jf-M-J0s_bispgX4EMeoyCPUGEu3X", "category": "Tech & Learning"}, {"name": "Apna College", "url": "https://www.youtube.com/@ApnaCollegeOfficial/videos", "category": "Tech & Learning"}, {"name": "AWS Developers", "url": "https://www.youtube.com/@awsdevelopers/videos", "category": "Tech & Learning"}, {"name": "Code Basics", "url": "https://www.youtube.com/@codebasics/videos", "category": "Tech & Learning"}, {"name": "googlecloudtech", "url": "https://www.youtube.com/@googlecloudtech", "category": "Tech & Learning"}, {"name": "upGradStudyAbroad", "url": "https://www.youtube.com/@upGradStudyAbroad/videos", "category": "Tech & Learning"}, {"name": "aishwaryasrinivasan", "url": "https://www.youtube.com/@aishwaryasrinivasan/videos", "category": "Tech & Learning"}, {"name": "JeffSu", "url": "https://www.youtube.com/@JeffSu/videos", "category": "Tech & Learning"}, {"name": "KodeKloud", "url": "https://www.youtube.com/@KodeKloud/videos", "category": "Tech & Learning"}, {"name": "ByteMonk", "url": "https://www.youtube.com/@ByteMonk/videos", "category": "Tech & Learning"}, {"name": "Apna College", "url": "", "category": "Tech & Learning"}, {"name": "NDTV", "url": "https://www.youtube.com/@NDTVProfitIndia/videos", "category": "News & Business"}, {"name": "The exchage CNBC", "url": "https://www.youtube.com/@CNBCtelevision/videos", "category": "News & Business"}, {"name": "CNBC tv18", "url": "https://www.youtube.com/playlist?list=PLVl8KvDazCjA", "category": "News & Business"}, {"name": "CNBC", "url": "https://www.youtube.com/@CNBCtelevision/videos", "category": "News & Business"}, {"name": "Bloomberg", "url": "", "category": "News & Business"}, {"name": "Mint", "url": "", "category": "News & Business"}, {"name": "Fox", "url": "", "category": "News & Business"}, {"name": "DW", "url": "", "category": "News & Business"}, {"name": "Al Zazeera", "url": "", "category": "News & Business"}, {"name": "Global News", "url": "", "category": "News & Business"}, {"name": "CNA", "url": "", "category": "News & Business"}, {"name": "Taiwan Talks", "url": "", "category": "News & Business"}, {"name": "Forbes", "url": "https://www.youtube.com/@Forbes/videos", "category": "Media & Learning"}, {"name": "yourstorytv", "url": "https://www.youtube.com/@yourstorytv/videos", "category": "News & Business"}, {"name": "thebbshop", "url": "https://www.youtube.com/@thebarbershopwithshantanu6670/videos", "category": "News & Business"}, {"name": "moneycontrol", "url": "https://www.youtube.com/@moneycontrol/videos", "category": "News & Business"}, {"name": "HarvardHBS", "url": "https://www.youtube.com/@HarvardHBS/videos", "category": "News & Business"}, {"name": "salesforce", "url": "https://www.youtube.com/@salesforce/videos", "category": "News & Business"}, {"name": "EO", "url": "https://www.youtube.com/@eoglobal/videos", "category": "Bookmarks"}, {"name": "OpenAI", "url": "https://www.youtube.com/@OpenAI/videos", "category": "News & Business"}, {"name": "anthropic", "url": "https://www.youtube.com/@anthropic-ai/videos", "category": "News & Business"}, {"name": "markets", "url": "https://www.youtube.com/@markets/videos", "category": "News & Business"}, {"name": "NDTV", "url": "https://www.youtube.com/playlist?list=PL1BQkm1ZUCaVB7S4bd2gFT9ASw1xZYf4L", "category": "News & Business"}, {"name": "The exchage CNBC", "url": "https://www.youtube.com/playlist?list=PL1BQkm1ZUCaVgxtjRtxAxg6xf9TmSuadv", "category": "News & Business"}];
+const STORAGE_KEY = "vivek-command-center-v2";
+let bookmarks = load();
+let activeCategory = "All";
+let searchTerm = "";
+
+function uid() {
+  return Date.now().toString(36) + Math.random().toString(36).slice(2,8);
+}
+function load() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(STORAGE_KEY));
+    if (Array.isArray(saved)) return saved;
+  } catch(e) {}
+  return INITIAL.map((x,i)=>({...x,id:uid(),favorite:false,description:"",order:i}));
+}
+function save() { localStorage.setItem(STORAGE_KEY, JSON.stringify(bookmarks)); }
+function escapeHtml(s) {
+  return String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c]));
+}
+function domain(url) {
+  try { return new URL(url).hostname.replace(/^www\./,""); } catch(e) { return "Local file"; }
+}
+const TECH_LEARNING = new Set(["AWS Developers","Code Basics","googlecloudtech","Apna College","KodeKloud","ByteMonk","JeffSu","aishwaryasrinivasan","upGradStudyAbroad"]);
+bookmarks.forEach(b => {
+  if (TECH_LEARNING.has(b.name)) b.category = "Tech & Learning";
+});
+// Normalize the Media & Learning category for the original media bookmarks.
+const MEDIA_LEARNING = new Set([
+  "Aar Paar","FF Explains","First Post america","World News ANI","Forbes",
+  "JimmyKimmelLive","stanfordonline","SiliconValleyGirl","lexfridman",
+  "Raj Shamami","VP Travel","Music","Ankit inspire"
+]);
+bookmarks.forEach(b => {
+  if (MEDIA_LEARNING.has(b.name)) b.category = "Media & Learning";
+});
+
+function categories() {
+  return [...new Set(bookmarks.map(b=>b.category).filter(Boolean))].sort((a,b)=>a.localeCompare(b));
+}
+function renderFilters() {
+  const cats = categories();
+  const filters = document.getElementById("filters");
+
+  filters.innerHTML =
+    `<button type="button" class="filter ${activeCategory==="All"?"active":""}" data-category="All">All</button>` +
+    cats.map(c =>
+      `<button type="button" class="filter ${activeCategory===c?"active":""}" data-category="${escapeHtml(c)}">${escapeHtml(c)}</button>`
+    ).join("");
+
+  filters.querySelectorAll(".filter").forEach(btn => {
+    btn.addEventListener("click", () => {
+      activeCategory = btn.dataset.category;
+      render();
+    });
+  });
+
+  document.getElementById("categoryList").innerHTML =
+    cats.map(c=>`<option value="${escapeHtml(c)}">`).join("");
+}
+function setCategory(c) { activeCategory=c; render(); }
+function matches(b) {
+  const q = searchTerm.toLowerCase();
+  const hay = `${b.name} ${b.url} ${b.category} ${b.description}`.toLowerCase();
+  return (activeCategory==="All" || b.category===activeCategory) && (!q || hay.includes(q));
+}
+function renderContent() {
+  const visible = bookmarks.filter(matches);
+
+  const grouped = {};
+  visible.forEach(b => (grouped[b.category] ??= []).push(b));
+  let out="";
+  for (const cat of Object.keys(grouped).sort()) {
+    const arr = grouped[cat].sort((a,b)=>(a.order??0)-(b.order??0));
+    out += `<section class="section"><div class="section-head"><h2>${escapeHtml(cat)}</h2><span class="count">${arr.length} bookmark${arr.length===1?"":"s"}</span></div><div class="grid" data-category="${escapeHtml(cat)}">`;
+    out += arr.map(card).join("");
+    out += "</div></section>";
+  }
+  document.getElementById("content").innerHTML = out || `<div class="empty">No bookmarks found.<br><br><button type="button" class="btn primary" onclick="openModal()">＋ Add Bookmark</button></div>`;
+  document.querySelectorAll(".bookmark").forEach(el=>{
+    el.addEventListener("dragstart",()=>{el.classList.add("dragging")});
+    el.addEventListener("dragend",()=>{el.classList.remove("dragging"); saveOrder();});
+  });
+  document.querySelectorAll(".grid").forEach(grid=>{
+    grid.addEventListener("dragover", e=>{
+      e.preventDefault();
+      const dragging=document.querySelector(".dragging");
+      if(!dragging) return;
+      const after=[...grid.querySelectorAll(".bookmark:not(.dragging)")].find(x=>e.clientY < x.getBoundingClientRect().top+x.offsetHeight/2);
+      if(after) grid.insertBefore(dragging,after); else grid.appendChild(dragging);
+    });
+  });
+}
+function render() {
+  renderFilters();
+  renderContent();
+}
+
+function card(b) {
+  const valid = b.url && b.url.trim() && b.url.trim() !== "#";
+  return `<article class="bookmark ${valid?"":"disabled"}" draggable="true" data-id="${b.id}">
+    <div class="actions">
+      <button class="icon" title="Favorite" onclick="event.stopPropagation();toggleFavorite('${b.id}')">${b.favorite?"★":"☆"}</button>
+      <button class="icon" title="Edit" onclick="event.stopPropagation();editBookmark('${b.id}')">✎</button>
+      <button class="icon" title="Delete" onclick="event.stopPropagation();deleteBookmark('${b.id}')">×</button>
+    </div>
+    ${valid ? `<h3><a href="${escapeHtml(b.url)}" target="_blank" rel="noopener noreferrer">${escapeHtml(b.name)}</a></h3>` : `<h3>${escapeHtml(b.name)}</h3>`}
+    
+  </article>`;
+}
+function toggleFavorite(id) {
+  const b=bookmarks.find(x=>x.id===id); if(b) b.favorite=!b.favorite; save(); render();
+}
+function deleteBookmark(id) {
+  const b=bookmarks.find(x=>x.id===id);
+  if(!b || !confirm(`Delete "${b.name}"?`)) return;
+  bookmarks=bookmarks.filter(x=>x.id!==id); save(); render();
+}
+function openModal(b=null) {
+  document.getElementById("modal").classList.add("show");
+  document.getElementById("modalTitle").textContent=b?"Edit Bookmark":"Add Bookmark";
+  document.getElementById("editId").value=b?.id||"";
+  document.getElementById("name").value=b?.name||"";
+  document.getElementById("url").value=b?.url||"";
+  document.getElementById("category").value=b?.category||activeCategory==="All"?"":activeCategory;
+  document.getElementById("description").value=b?.description||"";
+  document.getElementById("name").focus();
+}
+function closeModal() { document.getElementById("modal").classList.remove("show"); }
+function editBookmark(id) { const b=bookmarks.find(x=>x.id===id); if(b) openModal(b); }
+document.getElementById("bookmarkForm").addEventListener("submit",e=>{
+  e.preventDefault();
+  const id=document.getElementById("editId").value;
+  const item={
+    id:id||uid(),
+    name:document.getElementById("name").value.trim(),
+    url:document.getElementById("url").value.trim(),
+    category:document.getElementById("category").value.trim()||"Other",
+    description:document.getElementById("description").value.trim(),
+    favorite:id ? (bookmarks.find(x=>x.id===id)?.favorite||false) : false,
+    order:id ? (bookmarks.find(x=>x.id===id)?.order||bookmarks.length) : bookmarks.length
+  };
+  if(id) bookmarks=bookmarks.map(x=>x.id===id?item:x); else bookmarks.push(item);
+  save(); closeModal(); render();
+});
+function saveOrder() {
+  const cards=[...document.querySelectorAll(".bookmark")];
+  cards.forEach((el,i)=>{const b=bookmarks.find(x=>x.id===el.dataset.id); if(b) b.order=i;});
+  save();
+}
+document.getElementById("search").addEventListener("input",e=>{searchTerm=e.target.value;render();});
+function exportBookmarks() {
+  const blob=new Blob([JSON.stringify(bookmarks,null,2)],{type:"application/json"});
+  const a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download="vivek_bookmarks.json"; a.click(); URL.revokeObjectURL(a.href);
+}
+function resetBookmarks() {
+  if(!confirm("Reset to the bookmarks from the original uploaded HTML?")) return;
+  bookmarks=INITIAL.map((x,i)=>({...x,id:uid(),favorite:false,description:"",order:i}));
+  save(); activeCategory="All"; searchTerm=""; document.getElementById("search").value=""; render();
+}
+document.getElementById("addBtn").addEventListener("click", () => openModal());
+document.getElementById("cancelBtn").addEventListener("click", () => closeModal());
+document.getElementById("exportBtn").addEventListener("click", () => exportBookmarks());
+document.getElementById("resetBtn").addEventListener("click", () => resetBookmarks());
+
+document.addEventListener("keydown", e => {
+  if (e.key === "Escape") closeModal();
+});
+
+render();
+</script>
+</body>
+</html>
